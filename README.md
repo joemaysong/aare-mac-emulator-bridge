@@ -1,48 +1,48 @@
 # AARE Mac Emulator Bridge
 
-在 Apple Silicon Mac 上執行 **Android 15 模擬器 + AARE**，先驗證本機畫面、聲音與觸控，再提供獨立的實驗性 Mac 藍牙／Wi-Fi 投影橋接。
+Run an **Android 15 emulator + AARE** on an Apple Silicon Mac, validate local video, audio and touch, and build a separate experimental Mac Bluetooth/Wi-Fi projection bridge.
 
-**AARE 原作者是 [prototux](https://github.com/prototux)，原始專案為 [prototux/AARE](https://github.com/prototux/AARE)。** Android Auto 協定、Android app 與桌面接收端來自 AARE；本專案新增 Mac 重建流程、模擬器編碼器修補與傳輸整合。上游使用 GPL-3.0，完整引用與改動界線請見 [NOTICE.md](NOTICE.md)、[LICENSE](LICENSE)。
+**AARE was created by [prototux](https://github.com/prototux); the original project is [prototux/AARE](https://github.com/prototux/AARE).** AARE provides the Android Auto protocol implementation, Android app and desktop receiver. This repository adds Mac reproduction scripts, an emulator encoder compatibility patch and transport integration. Upstream uses GPL-3.0; see [NOTICE.md](NOTICE.md) and [LICENSE](LICENSE) for attribution, licensing and modification boundaries.
 
-> **目前可以重建並測試 Mac 本機環境；Mac → EV6 的實際無線投影仍未驗證成功。** 本機模擬測試通過，不代表車機接受憑證、手機角色或 AAP 連線。本專案不包含車機刷機、APK 安裝到車機、AP 強制啟動、車控 API 或車機修補。
+> **The Mac local environment can be rebuilt and tested; actual Mac-to-EV6 wireless projection has not been verified successfully.** Passing simulated tests does not establish vehicle acceptance of certificates, phone roles or AAP. This repository contains no vehicle flashing, vehicle APK installation, forced AP startup, vehicle-control APIs or head-unit patches.
 
-## 這份 repository 包含什麼
+## What is included
 
-- 官方 AARE v1.1.1 與指定原始碼 commit 的 SHA-256 鎖定下載／重建配方。
-- 專用 `AARE_Mac_API35` AVD 建立、啟動、安裝與停止腳本，所有 ADB 明確指定 `emulator-5580`。
-- `MediaCodec.reset()` 後重新註冊 callback 的小型相容性修補；只改官方 APK 的 `classes4.dex`，使用每位使用者本機產生的測試簽章。
-- 可從官方桌面發行包重建的 Mac 接收端、可選音訊統計與合成音／觸控測試 app 原始碼。
-- 本機不透明 AAP relay，以及獨立的 Mac RFCOMM → WPP → CoreWLAN → TCP → 模擬器 AAP 橋接。
-- Wi-Fi 變更前的還原紀錄、取消／逾時／斷線收尾、異常退出後的恢復入口與測試。
-- 讓其他 Codex 或 agent 接手的 [AGENTS.md](AGENTS.md) 與 [操作手冊](docs/AGENT_RUNBOOK.md)。
+- SHA-256-locked download and build recipes for official AARE v1.1.1 and a pinned source commit.
+- Scripts to create, start, install into and stop the dedicated `AARE_Mac_API35` AVD. Every ADB command explicitly targets `emulator-5580`.
+- A small compatibility patch that re-registers the callback after `MediaCodec.reset()`. It changes only `classes4.dex` in the official APK and uses a locally generated test signature.
+- Rebuildable Mac receivers based on the official desktop release, optional audio statistics, and source for a synthetic-tone/touch probe app.
+- A local opaque AAP relay and a separate Mac RFCOMM → WPP → CoreWLAN → TCP → emulator AAP bridge.
+- A journal written before Wi-Fi changes, cancellation/timeout/disconnect cleanup, crash recovery and tests.
+- [AGENTS.md](AGENTS.md) and a [step-by-step runbook](docs/AGENT_RUNBOOK.md) for other Codex instances or agents.
 
-不包含 SDK/JDK、AVD 磁碟映像、APK 發行檔、第三方 jar、私人 TLS／簽章金鑰、個人帳號、Wi-Fi 密碼、車輛識別或實驗原始錄音。這些產物會在明確的步驟下於使用者電腦取得或生成，並被 `.gitignore` 排除。
+SDKs/JDKs, AVD disk images, release APKs, third-party jars, private TLS/signing keys, personal accounts, Wi-Fi passwords, vehicle identifiers and raw experimental recordings are excluded. Explicit steps fetch or generate local artifacts, which are covered by `.gitignore`.
 
-## 已知驗證範圍
+## Validation status
 
-| 項目 | 狀態 |
+| Item | Status |
 |---|---|
-| 原測試環境的 Mac AARE 桌面畫面 | 已看到 1280×720 H.264，實際 fps 未量測 |
-| 點選、手動拖曳捲動 | 原測試環境通過；自動化工具拖曳曾漏送 MOVE |
-| 聲音 | 原環境收到 48 kHz 雙聲道 PCM，使用者確認合成雙音可聽見 |
-| Phone screen、Google Maps 地圖載入 | 原環境通過；不是導航／定位驗證 |
-| 舊映像內建 YouTube | 版本太舊、服務回應錯誤；未通過播放驗證 |
-| 新 Mac 協調器、真 JVM WPP、原生 IPC、假無線電 | 本機整合測試通過 |
-| 這份可攜專案的重新建置／測試 | 詳見 [驗證紀錄](docs/VALIDATION.md) |
-| 實體 CoreWLAN 加入車機 AP、網路還原 | 尚未在真實車機上驗證 |
-| EV6 憑證／AAP 接受、實車畫面／聲音／觸控 | **未完成驗證** |
+| Mac AARE Desktop video in the original lab | Visible 1280×720 H.264; actual frame rate not measured |
+| Taps and manual drag/scroll | Passed in the original lab; an automation tool sometimes omitted MOVE events |
+| Audio | Original lab received 48 kHz stereo PCM; the user confirmed the synthetic two-tone sound was audible |
+| Phone screen and Google Maps tiles | Passed in the original lab; not navigation or location validation |
+| YouTube bundled with the old image | Too old; service errors; playback did not pass |
+| New Mac supervisor, real JVM WPP, native IPC and fake radio | Local integration tests passed |
+| Rebuild and tests of this portable export | See the [validation record](docs/VALIDATION.md) |
+| Physical CoreWLAN association with the car AP and network restoration | Not yet validated against a real car |
+| EV6 certificate/AAP acceptance and actual vehicle video/audio/touch | **Not verified** |
 
-參考平台：Apple Silicon Mac、macOS 26.7、16 GB RAM；Android API 35 `google_apis;arm64-v8a`，2 GB RAM／2 核。Intel Mac、其他 Android 映像、其他車機與長時間穩定性尚未驗證。原環境結果是人工／實機觀察，不是此 repo 在每台機器都會自動重現的保證。
+Reference platform: Apple Silicon Mac, macOS 26.7, 16 GB RAM; Android API 35 `google_apis;arm64-v8a`, 2 GB guest RAM and 2 cores. Intel Macs, other Android images, other head units and long-session stability have not been validated. Original lab results are scoped manual observations, not a guarantee that every clone reproduces them automatically.
 
-## 從空白 checkout 開始
+## Start from a fresh checkout
 
-需要 Xcode Command Line Tools、完整 JDK 17（含 `javac`、`jpackage`）、Python 3.10+、Android 官方 SDK 命令列工具及 `ffmpeg`。詳見 [完整安裝步驟](docs/SETUP.md)，先自行處理 SDK 授權條款。
+Install Xcode Command Line Tools, a full JDK 17 including `javac` and `jpackage`, Python 3.10+, the official Android SDK command-line tools and `ffmpeg`. Follow the [complete setup guide](docs/SETUP.md), including normal user review of SDK license terms.
 
 ```sh
 git clone https://github.com/joemaysong/aare-mac-emulator-bridge.git
 cd aare-mac-emulator-bridge
 
-# 依實際 JDK 安裝位置設定，不能只裝 JRE。
+# Point to your full JDK installation, not a JRE.
 export JAVA_HOME="/path/to/jdk/Contents/Home"
 export ANDROID_SDK_ROOT="$HOME/Library/Android/sdk"
 export PATH="$JAVA_HOME/bin:$ANDROID_SDK_ROOT/platform-tools:$PATH"
@@ -53,25 +53,25 @@ python3 scripts/repro.py prepare-core
 python3 scripts/repro.py build-core
 python3 scripts/patch_apk.py
 python3 scripts/repro.py build-desktop
-python3 scripts/build_probe.py                    # 可選：合成音／觸控測試 APK
-python3 scripts/repro.py create-avd               # 拒絕覆寫已存在的 AVD
-python3 scripts/lab.py start --prepare-only       # 先啟動 Android 與 AARE，不開接收端
-python3 scripts/lab.py install                    # 僅安裝到已核對名稱的 emulator-5580
-python3 scripts/lab.py install --probe            # 可選
+python3 scripts/build_probe.py                    # Optional synthetic-tone/touch APK
+python3 scripts/repro.py create-avd               # Refuses to overwrite an existing AVD
+python3 scripts/lab.py start --prepare-only       # Boot Android; do not open a receiver
+python3 scripts/lab.py install                    # Only the verified emulator-5580 AVD
+python3 scripts/lab.py install --probe            # Optional
 ```
 
-第一次 `prepare-only` 只會開好專用 AVD；若 AARE 尚未安裝，會提示先安裝而不開接收端。完成 `install` 後執行 `python3 scripts/lab.py prepare` 即可開啟 AARE。
+On the first `prepare-only` run, the dedicated AVD is started. If AARE is not installed, the script asks you to install it and does not open a receiver. After installation, run `python3 scripts/lab.py prepare` to open AARE.
 
-在模擬器內按照 [設定與授權流程](docs/SETUP.md#aare-介面設定) 開啟 head-unit server、Phone screen、Accessibility 及需要時的 Entire screen 擷取。這些是使用者可見的權限，不會由腳本偷偷核准。
+Inside the emulator, follow the [UI setup and permission steps](docs/SETUP.md#aare-ui-settings) to enable the head-unit server, Phone screen, Accessibility and, when needed, Entire screen capture. These are user-visible grants; scripts do not silently approve them.
 
 ```sh
-python3 scripts/lab.py start       # 開原始本機接收端，使用 adb forward 55277
-python3 scripts/lab.py stop        # 只停止此 checkout 的接收端與專用 AVD
+python3 scripts/lab.py start       # Open the direct receiver using ADB forward 55277
+python3 scripts/lab.py stop        # Stop only this checkout's receivers and dedicated AVD
 ```
 
-上游版本：[`v1.1.1`](https://github.com/prototux/AARE/releases/tag/v1.1.1)；原始碼 commit：[`e8da04dc422abd36be60a81bb9fc7f782e8d7e84`](https://github.com/prototux/AARE/tree/e8da04dc422abd36be60a81bb9fc7f782e8d7e84)。不要直接改成 `latest`。SDK 套件 ID 固定，但 Google 可能更新映像修訂版；建立時會記錄 `package.xml`，**不宣稱可以取得與原測試機位元完全相同的映像**。
+Upstream release: [`v1.1.1`](https://github.com/prototux/AARE/releases/tag/v1.1.1). Source commit: [`e8da04dc422abd36be60a81bb9fc7f782e8d7e84`](https://github.com/prototux/AARE/tree/e8da04dc422abd36be60a81bb9fc7f782e8d7e84). Do not silently substitute `latest`. SDK package IDs are pinned, but Google may update image revisions. Creation records `package.xml`; **this does not promise a byte-identical copy of the original lab's system image**.
 
-## 不連車機的測試
+## Tests without a vehicle
 
 ```sh
 zsh bridge/wireless-session/build.command
@@ -79,34 +79,34 @@ zsh bridge/wireless-session/test.command
 python3 scripts/audit_public.py
 ```
 
-這些步驟不使用車機 ADB、不啟動真實藍牙／Wi-Fi 連線。測試包含原生 Swift 還原政策、私有 IPC、真 JVM WPP 與二進位 relay；無線電由 fake 代替。
+These steps do not use vehicle ADB or initiate real Bluetooth/Wi-Fi connections. Tests cover the Swift restoration policy, private IPC, real JVM WPP and binary relay; the radio is a fake.
 
-本機 Desktop 經 relay 的人工測試：先關閉已開啟的接收端，再執行 `python3 scripts/lab.py relay`；只能同時有一個接收端占用 AARE 的單一投影連線。Mac 假接收端的 `Parked` 是桌面模擬狀態，不能移植為實車限制繞過。
+For a manual Desktop-through-relay test, close any running receiver and execute `python3 scripts/lab.py relay`. Only one receiver can consume AARE's projection connection at a time. `Parked` in the fake Mac receiver is a desktop simulation state, not a vehicle restriction bypass.
 
-## 後續實車測試入口
+## Future real-car test entry point
 
-先讀 [架構](docs/ARCHITECTURE.md) 與 [還原流程](docs/RECOVERY.md)。沒有當次實車測試授權時，只執行：
+Read the [architecture](docs/ARCHITECTURE.md) and [recovery procedure](docs/RECOVERY.md) first. Without separate authorization for the current real-car test, run only:
 
 ```sh
-./bridge/wireless-session/start-wireless.command   # 預設只 --check
+./bridge/wireless-session/start-wireless.command   # Defaults to --check only
 ```
 
-未來確認停妥、供電穩定且願意中斷現有投影後，才由使用者明確指定已配對車輛：
+For a later authorized test, confirm the vehicle is parked, power is stable and interruption of existing projection is acceptable. The user must explicitly select an already-paired vehicle:
 
 ```sh
 ./bridge/wireless-session/start-wireless.command \
   --connect --device AA-BB-CC-DD-EE-FF --seconds 300
 ```
 
-上例為占位位址。若新 SDP 查詢在特定裝置不回覆，可經核對後加 `--cached-service-diagnostic`；快取不等於新 SDP 驗證，仍必須通過真正 WPP。此工具不會啟動車機 AP 或修改車機。車機如果沒有送出 StartRequest／credentials，Mac 必須等待或收尾，不能偽造成功。
+The address above is a placeholder. If a particular device does not answer a fresh SDP query, the verified diagnostic workflow may use `--cached-service-diagnostic`. A cache is not fresh SDP validation; real WPP must still succeed. The tool does not start the car AP or modify the head unit. If the car does not send StartRequest/credentials, the Mac must wait or clean up, never fabricate success.
 
-每輪報告的 `tcp_pair_connected` 只表示兩端 socket 已接上；`aap_tls_accepted` 與 `projection_verified` 仍需獨立證據。不要根據握手或傳輸 byte 數宣稱投影成功。
+In a run report, `tcp_pair_connected` means only that both sockets connected. `aap_tls_accepted` and `projection_verified` require independent evidence. A successful handshake or nonzero byte count is not proof of projection.
 
-## 文件索引
+## Documentation
 
-- [SETUP：依賴、完整重建與 GUI 授權](docs/SETUP.md)
-- [ARCHITECTURE：元件、資料流與責任界線](docs/ARCHITECTURE.md)
-- [VALIDATION：已測／未測、測試指令與結果](docs/VALIDATION.md)
-- [RECOVERY：取消、Wi-Fi 恢復、程式回退與移除](docs/RECOVERY.md)
-- [AGENT_RUNBOOK：讓其他 agent 接手的逐階段工作單](docs/AGENT_RUNBOOK.md)
-- [NOTICE：原作者、授權與修改範圍](NOTICE.md)
+- [SETUP: dependencies, full rebuild and GUI permissions](docs/SETUP.md)
+- [ARCHITECTURE: components, data flow and responsibility boundaries](docs/ARCHITECTURE.md)
+- [VALIDATION: tested/untested behavior, commands and results](docs/VALIDATION.md)
+- [RECOVERY: cancellation, Wi-Fi restoration, rollback and removal](docs/RECOVERY.md)
+- [AGENT_RUNBOOK: phased reproduction and handoff instructions](docs/AGENT_RUNBOOK.md)
+- [NOTICE: original authors, licensing and modification scope](NOTICE.md)

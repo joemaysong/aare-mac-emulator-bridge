@@ -33,7 +33,7 @@
     "AGENTS.md": "222ea94d5c96d32e69cac3486156e76c26600b4f4a6ebe33626ae97bf67b6bec",
     "LICENSE": "3972dc9744f6499f0f9b2dbf76696f2ae7ad8af9b23dde66d6af86c9dfb36986",
     "NOTICE.md": "6e1dc6f17a4203a6eb7b0de33a73efd01996cacd85f07dd416dba7f306f57339",
-    "README.md": "8573bcc1fa32d30a165d675e9c4f9e0c16c4d6f95b5b58a0a69d5738eb47b5b7",
+    "README.md": "b5226db04826304e0798b5b50c03badbad108aa8010ab8498366aa4603fe48de",
     "SECURITY.md": "5abe2b63becfcd7bf23f490e83bb16234fc9c4abc15da90d5c1df7e0f00b7529",
     "bridge/emulator-lab/audio-monitor/src/net/prototux/aare/headunit/AudioOutputs.java": "a49a982c848a88377441154bddd2c4e93139fcc118d82d993d786272eb8bd137",
     "bridge/emulator-lab/audio-probe/src/org/ev6/aarelab/MainActivity.java": "b59b84f9343f6a5c6f6e3cbb09415086d1c0419c3b8805356ddc9bd55c6ff1d1",
@@ -59,8 +59,8 @@
     "dependencies.lock.json": "abedf4350a2ebecd313f3ef65d6c160a7a81ea113bbbbbff4dadd9a75fbc83d0",
     "docs/AGENT_RUNBOOK.md": "63c5b88919960068d0a2258905ed0f7d54334292546bddd088f2c0045ed4f15a",
     "docs/ARCHITECTURE.md": "65a3e0d1ee2bbfa73fa5305067ff443391fb0bf4b5bb82f68d4beab315eb182b",
-    "docs/RECOVERY.md": "f562b5a1efc2cff6044b04757e71352399a0887162c64c30fced67166e7cbddc",
-    "docs/SETUP.md": "49ee10adff0e0bf419ba44f6099e78c884241349cb97c09fd4411d48adf604d1",
+    "docs/RECOVERY.md": "9ae537bedc0cf3463eaadbd9b02d301859263bdf30500d39caca9a6b18a5c782",
+    "docs/SETUP.md": "710ff2a8b28547c554ffc534007f72825c1aa4ae136fb1e5991f374772aca5ef",
     "docs/VALIDATION.md": "a385d47355c73c43d00cc19bda9a2f49ce0a1977024172f693e5737191b06192",
     "patches/VideoEncoder.compat.patch": "8f7b85635ef91067c486b7df770a9080b7a0ad6fcc7aa8374ce838103724b777",
     "scripts/audit_public.py": "c036d286e597304f198f2c599de176f7b12cf4023aebce5e0bc6dd28cbb8749e",
@@ -69,5 +69,6 @@
     "scripts/lab.py": "3cd4d62c9d407fa10df249a6d7ba56c34c23f3216232776a1c3e7b37af0d2854",
     "scripts/patch_apk.py": "efe0bb0a1e91c4967561e7ac8d671df7a8671ddf7608847ac6482fd24741a8f4",
     "scripts/repro.py": "8800a38b453227fe06535f914836ae7e2f19cd01e48ced9314b87b800f54f043"
-  }
+  },
+  "documentation_language": "English"
 }

@@ -1,21 +1,21 @@
-# 完整安裝與重建
+# Complete setup and rebuild
 
-本流程的預設終點是 **Mac 本機 Android + AARE 桌面投影**，不需要車機。命令從 repository 根目錄執行；路徑可含空白，請保留引號。
+The default endpoint of this procedure is **local Android + AARE Desktop projection on a Mac**. No vehicle is required. Run commands from the repository root. Paths may contain spaces; keep the quotes shown below.
 
-## 1. 主機需求
+## 1. Host requirements
 
-- Apple Silicon Mac；原觀察平台 macOS 26.7、16 GB RAM。其他 macOS 版本與 Intel 未驗證。
-- 預留約20 GB可用空間供 SDK、Android 映像、AVD、JDK、Gradle cache 與 app-image。這不是 source repo 的大小。
-- Python 3.10+、Git、Xcode Command Line Tools／Xcode（`xcrun swiftc`、`codesign`）。
-- 完整 JDK 17，須包含 `java`、`javac`、`jar`、`keytool`、`jpackage`。原環境使用 Eclipse Temurin 17.0.21+9；JRE 不足以重建。JDK21尚未作為本包實際測試基準。
-- [Android 官方 SDK 命令列工具](https://developer.android.com/tools)；安裝與授權由使用者完成。
-- `ffmpeg`，提供桌面接收端 H.264 解碼。可以使用官方列出的 macOS 套件或 Homebrew 的 `ffmpeg`，不要把來路不明的可執行檔放入 PATH。
+- Apple Silicon Mac. The reference host was macOS 26.7 with 16 GB RAM. Other macOS versions and Intel Macs are unverified.
+- About 20 GB of free disk space for the SDK, Android image, AVD, JDK, Gradle cache and app-images. This is not the source repository's size.
+- Python 3.10+, Git and Xcode Command Line Tools/Xcode, including `xcrun swiftc` and `codesign`.
+- Full JDK 17, including `java`, `javac`, `jar`, `keytool` and `jpackage`. The reference environment used Eclipse Temurin 17.0.21+9. A JRE is insufficient. JDK 21 has not been used as this export's tested baseline.
+- [Official Android SDK command-line tools](https://developer.android.com/tools), installed and licensed by the user.
+- `ffmpeg` for desktop H.264 decoding. Use a macOS distribution listed by the official project or Homebrew's `ffmpeg`; do not place an untrusted executable on PATH.
 
-常用前置命令（安裝軟體、條款與作業系統對話框由使用者處理）：
+Typical prerequisite checks follow. Software installation, license terms and OS dialogs remain user-controlled:
 
 ```sh
 xcode-select --install
-# 安裝官方 Eclipse Temurin/OpenJDK 17 後：
+# After installing an official Eclipse Temurin/OpenJDK 17 distribution:
 export JAVA_HOME="$(/usr/libexec/java_home -v 17)"
 export ANDROID_SDK_ROOT="$HOME/Library/Android/sdk"
 export PATH="$JAVA_HOME/bin:$ANDROID_SDK_ROOT/platform-tools:$ANDROID_SDK_ROOT/cmdline-tools/latest/bin:$PATH"
@@ -25,11 +25,11 @@ jpackage --version
 ffmpeg -version
 ```
 
-若 JDK 是解壓到自選目錄而未註冊系統，請直接設定其 `Contents/Home`，不要照抄原作者工作站路徑。若沒有 Homebrew，不必為此 repository 自動安裝它；可選擇已有的官方工具安裝方式。
+For a JDK extracted to a custom location rather than registered with macOS, set its `Contents/Home` directly. Do not copy the original author's workstation paths. Homebrew is optional; agents should not install it automatically just for this repository when another official installation method is available.
 
-## 2. Android SDK 套件
+## 2. Android SDK packages
 
-先把 Android 官方命令列工具安裝到 SDK 的 `cmdline-tools/latest/`，自行閱讀並處理 SDK 授權：
+Install the official command-line tools under the SDK's `cmdline-tools/latest/` directory. Review and handle SDK license agreements normally:
 
 ```sh
 sdkmanager --sdk_root="$ANDROID_SDK_ROOT" --licenses
@@ -38,77 +38,77 @@ sdkmanager --sdk_root="$ANDROID_SDK_ROOT" \
   'system-images;android-35;google_apis;arm64-v8a'
 ```
 
-不要用 `yes | sdkmanager --licenses` 把法律條款當成一般確認。新版本 SDK 可能提示改用 Android CLI；此處列出的 sdkmanager 相容入口在重建時仍可用，若未來移除，應另行更新文件並驗證。
+Do not use `yes | sdkmanager --licenses` to treat legal terms as routine prompts. New SDK versions may recommend Android CLI instead; the sdkmanager compatibility entry point above still worked during rebuild validation. If it is removed later, update and validate the documented workflow separately.
 
-這裡是 **Google APIs** 映像，不是 **Google Play** 映像。不要額外下載 API36／Play 映像。包名固定不代表檔案 revision 永遠相同：`create-avd` 會保存當次映像 `package.xml` 到 `build/installed-system-image-package.xml`。原機 emulator37.2.13、platform-tools37.0.1；官方 repository 後續更新未逐版驗證。
+Use the **Google APIs** image, not **Google Play**. Do not download an additional API 36/Play image. A fixed package ID does not make its revision immutable: `create-avd` records the installed image's `package.xml` at `build/installed-system-image-package.xml`. Reference versions were emulator 37.2.13 and platform-tools 37.0.1; later official releases have not all been validated.
 
 ```sh
 python3 scripts/repro.py doctor
 ```
 
-預期：Apple Silicon、完整 JAVA_HOME、所有 SDK 檔案與 ffmpeg 存在。doctor 不下載、不執行 ADB、不操作無線電。
+Expected results: Apple Silicon, a valid full JAVA_HOME, all required SDK files and ffmpeg available. Doctor does not download, invoke ADB or change radios.
 
-## 3. 取得鎖定的上游依賴
+## 3. Fetch pinned upstream dependencies
 
 ```sh
 python3 scripts/repro.py fetch
 ```
 
-只下載 `dependencies.lock.json` 指定的官方 AARE APK／桌面發行包／原始碼壓縮檔，以及 Maven Central 的 smali 工具依賴。每個檔案都驗證 SHA-256；不允許 digest 不符時繼續。沒有下載 Android 映像、Google Maps、YouTube、其他 APK 或 JDK。
+This downloads only the official AARE APK, desktop release and source archive, plus Maven Central smali dependencies listed in `dependencies.lock.json`. Every artifact is SHA-256-verified; a digest mismatch stops the process. This command does not download Android images, Google Maps, YouTube, other APKs or a JDK.
 
-若有既有 cache，可用 `fetch --from-cache /path/to/cache`；只有鎖定清單內且 hash 正確的檔案會被複製，不會掃描或帶走整個目錄。下載 cache 位於 `.cache/downloads`，不提交 Git。
+To reuse an existing cache, pass `fetch --from-cache /path/to/cache`. Only manifest-listed files with matching hashes are copied, never an entire directory. Downloads are stored in ignored `.cache/downloads` and must not be committed.
 
-## 4. 重建 JVM 協定核心
+## 4. Rebuild the JVM protocol core
 
 ```sh
 python3 scripts/repro.py prepare-core
 python3 scripts/repro.py build-core
 ```
 
-來源固定到 AARE commit `e8da04dc422abd36be60a81bb9fc7f782e8d7e84`。`prepare-core` 在 `bridge/core` 生成只含 `aap` 的 Gradle 工程，停用 Android／headunit 模組與 Google Gradle repository，使用 Maven Central 與 plugin portal；不改 `.cache/upstream`。
+Source is pinned to AARE commit `e8da04dc422abd36be60a81bb9fc7f782e8d7e84`. `prepare-core` generates a Gradle project containing only `aap` under `bridge/core`, excludes Android/headunit modules and Google's Gradle repository, and uses Maven Central and the plugin portal. It does not modify `.cache/upstream`.
 
-額外 task `:aap:writeMacClasspath` 產生當前 checkout 的 JVM classpath；它包含絕對路徑，因此換目錄／換機器後必須重跑，不可把舊檔當成可攜產物。建置使用 `--no-configuration-cache`，避免該 task 擷取 Gradle 物件造成序列化錯誤。
+The added `:aap:writeMacClasspath` task generates a JVM classpath for this checkout. It contains absolute paths, so rerun it after moving the directory or changing machines. Do not distribute an old generated classpath as a portable artifact. Builds use `--no-configuration-cache` because this task captures Gradle objects that otherwise fail configuration-cache serialization.
 
-初次 Gradle 建置會下載 pinned Gradle/Maven 依賴。已有正確 cache 時可用 `build-core --offline`；不要把第一次離線缺依賴誤判成原始碼失敗。上游 `aap` 測試也會在這一步執行。
+The first Gradle build downloads pinned Gradle/Maven dependencies. With the correct dependencies already cached, use `build-core --offline`. Missing first-run offline dependencies are a prerequisite issue, not proof of a source defect. Upstream `aap` tests also run in this step.
 
-## 5. 產生模擬器相容 APK
+## 5. Generate the emulator-compatible APK
 
 ```sh
 python3 scripts/patch_apk.py
 ```
 
-官方1.1.1在原測試 AVD 上因 `c2.android.avc.encoder` 不接受某個 format 選項而走 fallback；`MediaCodec.reset()` 清掉非同步 callback，導致沒有畫面。修補只在 reset 後重註冊 `Callback` 與 encoder handler，見 [來源等價 patch](../patches/VideoEncoder.compat.patch)。
+In the original AVD, official 1.1.1 encountered a `c2.android.avc.encoder` format-option rejection and used its fallback path. `MediaCodec.reset()` cleared the asynchronous callback, resulting in no video. The patch only re-registers `Callback` and the encoder handler after reset; see the [source-equivalent patch](../patches/VideoEncoder.compat.patch).
 
-可執行配方會：
+The executable recipe:
 
-1. 驗證官方 APK SHA-256。
-2. 解出 `classes4.dex`，使用固定 smali2.5.2 反組譯。
-3. 確認唯一 reset 呼叫與 register 形狀符合指定版本；不符合就停止。
-4. 只在 `VideoEncoder.smali` 插入重新註冊，重組 dex。
-5. 核對所有其他 ZIP 內容完全未變（舊簽章 metadata 除外）。
-6. zipalign，使用 `.cache/signing/emulator-debug.jks` 的新本機測試 key 簽署並驗證。
+1. Verifies the official APK's SHA-256.
+2. Extracts `classes4.dex` and disassembles it with pinned smali 2.5.2 tools.
+3. Checks that the unique reset invocation and register layout match the pinned release; otherwise it stops.
+4. Adds callback registration only in `VideoEncoder.smali` and reassembles the DEX.
+5. Verifies all other ZIP content is unchanged, except old signature metadata.
+6. Runs zipalign, signs with a new local test key at `.cache/signing/emulator-debug.jks`, and verifies the signature.
 
-產物：`build/apk-patch/aare-emulator.apk` 與 `verification.json`。**不同機器會產生不同簽章／APK hash，不能拿一個全域 patched APK hash 判斷失敗**；原版 APK、patch 形狀和未改內容才是固定驗證點。這不是原作者官方簽章，也不是車機 firmware。
+Outputs are `build/apk-patch/aare-emulator.apk` and `verification.json`. **Different machines generate different signatures/APK hashes, so a single global patched APK hash is not an appropriate pass/fail check.** The official input, patch shape and unchanged content are the fixed verification points. This is neither the author's official signature nor a vehicle firmware patch.
 
-腳本拒絕覆寫已有工作目錄；重跑前可先將自己產生的 `build/apk-patch` 移到另一個名稱保存。不要改成清除整個 repository。
+The script refuses to overwrite an existing work directory. Before rebuilding, inspect and move your generated `build/apk-patch` aside under a different name. Do not replace this with deletion of the entire repository.
 
-## 6. 建立桌面接收端與可選測試 app
+## 6. Build desktop receivers and the optional probe app
 
 ```sh
 python3 scripts/repro.py build-desktop
 python3 scripts/build_probe.py
 ```
 
-桌面使用官方 AARE headunit 發行包的 jar，加入相同播放介面的音訊統計 overlay，再由 `jpackage` 在當前機器產生兩個 app-image：
+The desktop build uses jars from the official AARE headunit release, adds an audio-statistics overlay with the same playback interface, and uses `jpackage` to generate two app-images on the current machine:
 
-- `bridge/emulator-lab/apps/AARE Desktop.app`：直連127.0.0.1:55277。
-- `bridge/emulator-lab/apps/AARE Bridge Desktop.app`：連本機relay的55278。
+- `bridge/emulator-lab/apps/AARE Desktop.app`: direct connection to 127.0.0.1:55277.
+- `bridge/emulator-lab/apps/AARE Bridge Desktop.app`: connection through the local relay on 55278.
 
-每個 app 包含自己的 Java runtime，不應把原測試機帶有外部 SDK symlink 的 app 直接複製給別人。兩個 app 都由本機 ad-hoc codesign。
+Each app contains its own Java runtime. Do not redistribute the original lab machine's app wrapper with external SDK symlinks. Both generated apps receive a local ad-hoc code signature.
 
-可選測試 APK `build/probe/AARE-Lab.apk` 只包含觸控計數與3秒合成音：48 kHz PCM16、先440 Hz後660 Hz、低振幅。沒有錄音或網路權限；不會自動播放。其 Android manifest／原始碼與 D8/aapt2/apksigner 配方都在此 repo。
+The optional `build/probe/AARE-Lab.apk` contains a touch counter and a quiet 3-second synthetic tone: 48 kHz PCM16, 440 Hz followed by 660 Hz. It has no recording or network permissions and does not play automatically. Its Android manifest/source and D8/aapt2/apksigner recipe are included in this repository.
 
-## 7. 建立與安裝專用 AVD
+## 7. Create and install into the dedicated AVD
 
 ```sh
 python3 scripts/repro.py create-avd
@@ -118,41 +118,41 @@ python3 scripts/lab.py install --probe
 python3 scripts/lab.py prepare
 ```
 
-AVD名稱 `AARE_Mac_API35`、API35 ARM64、2048 MB、2 cores、720×1280／240dpi、host GPU；啟動用 port5580，即 `emulator-5580`。若同名 AVD 已存在，建立腳本會拒絕覆寫。不要用 `--force` 擦掉使用者現有 AVD。
+Configuration: `AARE_Mac_API35`, API 35 ARM64, 2048 MB RAM, 2 cores, 720×1280 at 240 dpi, host GPU. It uses port 5580 and therefore `emulator-5580`. Creation refuses to overwrite an existing AVD with this name. Do not use `--force` to erase the user's existing AVD.
 
-如果 `adb install -r` 因官方／本機簽章不同失敗，先保存必要資料，經使用者同意後只卸載**專用模擬器內**的 `net.prototux.aare` 再安裝。不要到其他 ADB 裝置重試，也不要把金鑰複製到公開 repo。
+If `adb install -r` fails because official and local signatures differ, preserve necessary data and obtain the user's agreement before uninstalling `net.prototux.aare` from **only the dedicated emulator**, then installing the local APK. Do not retry on another ADB device or copy signing keys into the public repository.
 
-## AARE 介面設定
+## AARE UI settings
 
-在專用模擬器的 AARE1.1.1 裡依序核對：
+In AARE 1.1.1 inside the dedicated emulator, verify:
 
-1. Advanced：開啟 head-unit server，端點 `localabstract:aare_hu`；不必開 LAN accept。
-2. Advanced：開啟 Phone screen on server。
-3. Car screen：開啟 Phone screen。
-4. Android Accessibility：由使用者啟用 AARE 的 MirrorTouchService，讓鏡像觸控能回送。
-5. Car audio：若要投影模擬器的音訊，進 Screen-capture permission，同意必要的模擬器錄音／媒體擷取權限，選 **Entire screen**，不是單一 app。
-6. 擷取授權後開接收端，離開再進入 Phone screen 以使用新 token。開機前的 token、等太久的 token 或已失效 token 不能當成仍有擷取權限。
+1. Advanced: enable the head-unit server at `localabstract:aare_hu`; LAN accept is unnecessary.
+2. Advanced: enable Phone screen on server.
+3. Car screen: enable Phone screen.
+4. Android Accessibility: have the user enable AARE's MirrorTouchService so mirrored touches can be delivered.
+5. Car audio: for emulator audio projection, open Screen-capture permission, approve the required emulator recording/media-capture grants, and select **Entire screen**, not an individual app.
+6. Open the receiver after capture consent. Leave and re-enter Phone screen to use the new token. A token from before boot, a token left unused too long, or an expired token does not prove active capture permission.
 
 ```sh
 python3 scripts/lab.py start
 ```
 
-桌面接收端是假的 head unit；在停車的本機測試中勾選 `Parked`，才可顯示受限制的 Phone screen。這個選項只用於 Mac 模擬測試，不能套用到真車。
+The desktop receiver is a fake head unit. In a parked local test, select `Parked` to display the restricted Phone screen. This is only a Mac simulation option and must not be applied to a real car.
 
-若第一次看到憑證確認，先確認是在自己建立的模擬器與本機 headunit之間，再依正常 AARE 流程信任；不要略過 TLS 檢查或匯入來路不明的生產金鑰。本專案不提供官方 Google AA 私鑰。
+If an initial certificate prompt appears, first verify that it is between your own emulator and local headunit, then follow AARE's normal trust workflow. Do not bypass TLS checks or import untrusted production keys. This repository does not supply official Google AA private keys.
 
-## 8. 畫面、聲音與觸控驗收
+## 8. Video, audio and touch acceptance
 
-先閱讀 [VALIDATION.md](VALIDATION.md)。手動確認看得到畫面；在投影內操作設定並確認模擬器真的變動；用手動拖曳核對捲動；進 AARE Lab 播放合成音，確認 Mac 有聲音且 audio-stats 的收到／播放 byte 增加。
+Read [VALIDATION.md](VALIDATION.md). Confirm visible video manually, operate a setting through the projection and verify the emulator actually changes, check scrolling with a manual drag, and play the synthetic tone in AARE Lab. Confirm audible Mac output and increasing received/played byte counts in audio-stats.
 
-不要只根據「點擊工具回傳成功」就記 PASS。原實驗中自動工具曾只送 DOWN/UP 沒有 MOVE，必須人工驗證拖曳。
+Do not record PASS merely because a click tool reports success. The original automation sometimes sent DOWN/UP without MOVE, requiring manual drag verification.
 
-Mac本機relay：關閉直連接收端後執行 `python3 scripts/lab.py relay`，重做上述檢查。`lab.py stop` 只停此 checkout 的接收端與已核對名稱的專用 AVD，不會停止其他 Java、ADB server或車機。
+For a local relay test, close the direct receiver, run `python3 scripts/lab.py relay`, and repeat these checks. `lab.py stop` stops only this checkout's receivers and the verified dedicated AVD, not other Java processes, the ADB server or a vehicle.
 
-## 9. Maps 與 YouTube 的界線
+## 9. Maps and YouTube boundaries
 
-原 Google APIs 映像內建的是完整 Maps／YouTube APK，但官方 Google AA 發送端只有stub。AARE 是另外的發送端，Mac Desktop 是接收端；兩者不是Android emulator裡的同一個 app。
+The original Google APIs image included full Maps/YouTube APKs but only a stub of the official Google AA sender. AARE is a separate sender, and Mac Desktop is the receiver; these are not one app inside the emulator.
 
-原實驗 Maps11.129.0103載入地圖且能鏡像，沒有驗證路線、GPS或導航語音。YouTube19.17.42太舊，要求更新／搜尋400，不能宣稱影片播放成功。映像的測試簽章也可能使 Google 正式版不能直接覆蓋。
+In the original experiment, Maps 11.129.0103 loaded map tiles and could be mirrored; routes, GPS and navigation voice were not verified. YouTube 19.17.42 was too old, requested an update and returned search 400; video playback did not pass. The image's test signing identity may also prevent a direct update with Google's official APK.
 
-此 repo 不下載地圖／影片 app、不提供APK來源，也不建立第二台Google Play AVD。新映像若內建版本不同，應記錄實際版本，重新驗證，不沿用舊結果。
+This repository does not download map/video apps, provide APK sources for them, or create a second Google Play AVD. If a newer image bundles different versions, record and revalidate them instead of inheriting the original results.
