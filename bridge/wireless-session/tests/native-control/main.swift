@@ -14,6 +14,11 @@ final class TestRadio: WifiRadio {
     func disassociate() { state = WifiSnapshot(powered: true, ssid: nil, bssid: nil, associated: false) }
     func address() -> WifiAddress? { WifiAddress(ip: "192.168.50.2", mask: "255.255.255.0", gateway: "192.168.50.1") }
 }
+let secret = "DO_NOT_EMIT_CREDENTIALS"
+let safe = NativeControl.safeFailure(NSError(domain: secret, code: -3900, userInfo: [NSLocalizedDescriptionKey: secret]))
+precondition(safe.0 == "system_wifi_error" && safe.1 == -3900)
+precondition(NativeControl.safeFailure(CoreWifiRadio.Failure.missingNetwork).0 == "network_not_found")
+precondition(NativeControl.safeFailure(WifiLease.Failure.address).0 == "dhcp_or_identity")
 let args = CommandLine.arguments
 guard args.count == 5 || args.count == 6 else { exit(2) }
 let radio = TestRadio()

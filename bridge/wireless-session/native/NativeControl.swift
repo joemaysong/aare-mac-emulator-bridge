@@ -8,6 +8,28 @@ final class NativeControl {
     let lock = NSLock()
     private var cancelled = false
     var ended: ((Bool, Bool) -> Void)?
+    var joinFailed: ((String, Int) -> Void)?
+    static func safeFailure(_ error: Error) -> (String, Int) {
+        if let failure = error as? WifiLease.Failure {
+            switch failure {
+            case .privacy: return ("privacy", 0)
+            case .journal: return ("journal", 0)
+            case .cancelled: return ("cancelled", 0)
+            case .address: return ("dhcp_or_identity", 0)
+            case .ownership: return ("ownership", 0)
+            case .credentials: return ("credentials_shape", 0)
+            }
+        }
+        if let failure = error as? CoreWifiRadio.Failure {
+            switch failure {
+            case .unavailable: return ("interface_unavailable", 0)
+            case .missingNetwork: return ("network_not_found", 0)
+            case .unsupportedSecurity: return ("unsupported_security", 0)
+            }
+        }
+        // Never include localizedDescription, userInfo, SSID, BSSID, or credentials.
+        return ("system_wifi_error", (error as NSError).code)
+    }
     init(directory: String, journal: URL, radio: WifiRadio? = nil) throws {
         let attrs = try FileManager.default.attributesOfItem(atPath: directory)
         guard (attrs[.ownerAccountID] as? NSNumber)?.uint32Value == getuid(),
@@ -80,7 +102,11 @@ final class NativeControl {
                             let value = try self.lease.join(ssid: ssid, bssid: bssid.isEmpty ? nil : bssid,
                                 password: password, security: parts[4], cancelled: self.stopped)
                             guard self.write("JOINED\t\(value.ip)\t\(self.lease.radio.name)\t\(value.mask)\t\(value.gateway)") else { break }
-                        } catch { _ = self.write("FAILED"); break }
+                        } catch {
+                            let safe = Self.safeFailure(error)
+                            DispatchQueue.main.async { self.joinFailed?(safe.0, safe.1) }
+                            _ = self.write("FAILED"); break
+                        }
                     }
                 }
             } catch { /* Journal remains for explicit recovery; no sensitive error text. */ }

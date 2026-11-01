@@ -74,4 +74,8 @@ Do not upload raw private logs/captures as evidence. Summaries, sanitized metada
 - Long-run stability, measured fps, latency, multipoint touch, microphone/calls and navigation.
 - A reproducible exact byte-identical SDK system image; package revisions are external.
 
-The original probe reached WPP version exchange with one car, but not successful projection. A car-side AP-demand/controller issue was being investigated separately; neither that private firmware work nor a claimed fix is part of this repository.
+The latest controlled attempt progressed beyond version exchange to a Wi-Fi
+information response. Mac association and vehicle TCP/AAP were not verified;
+tool-side restoration was reported complete while head-unit cleanup remained
+unresolved. See [the sanitized experiment and diagnostic changes](WIRELESS_PROGRESS.md).
+No head-unit firmware or deployment artifacts are included here.

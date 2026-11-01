@@ -176,6 +176,7 @@ probe.cachedServiceOnly = args.contains("--cached-service-diagnostic")
 let recovery = args.contains("--recover-only")
 do {
     probe.control = try NativeControl(directory: directory, journal: journal)
+    probe.control?.joinFailed = { kind, code in probe.event("wifi_join_failed", ["kind": kind, "code": code]) }
     probe.control?.ended = { modified, restored in probe.complete(modified, restored: restored) }
     if !recovery { probe.bridge = try RfcommBridge(directory: URL(fileURLWithPath: directory).resolvingSymlinksInPath().path) }
 } catch { fputs("Native IPC initialization failed\n", stderr); exit(2) }

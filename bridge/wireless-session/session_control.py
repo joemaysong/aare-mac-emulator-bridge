@@ -85,6 +85,8 @@ class SessionControl:
             send_line(self.native, fields)  # Private sockets only; never logged.
             reply = read_line(self.native, self.stop, min(self.deadline, time.monotonic() + 45))
             if len(reply) != 5 or reply[0] != 'JOINED':
+                self.report['failure_stage'] = 'wifi_join'
+                self.report['failure_reason'] = 'native_join_failed' if reply == ['FAILED'] else 'invalid_native_reply'
                 return ['FAILED']
             ip, interface, mask, gateway = reply[1:]
             private_ip(ip)
