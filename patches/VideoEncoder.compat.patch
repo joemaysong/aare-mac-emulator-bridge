@@ -1,0 +1,14 @@
+--- upstream/VideoEncoder.kt
++++ lab/VideoEncoder.kt
+@@ -91,7 +91,10 @@
+             } catch (e: Exception) {
+                 lastError = e
+                 Log.w(TAG, "encoder ${c.name} rejected $format: ${e.message}")
+-                runCatching { c.reset() }
++                runCatching {
++                    c.reset()
++                    c.setCallback(Callback(), Handler(t.looper))
++                }
+             }
+         }
+         if (!configured) {
