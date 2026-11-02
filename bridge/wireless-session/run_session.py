@@ -18,6 +18,7 @@ import threading
 import time
 
 from session_control import SessionControl
+import relay_identity
 
 HERE = Path(__file__).resolve().parent
 ROOT = HERE.parent
@@ -50,10 +51,7 @@ def preflight():
     if cp.is_file():
         missing.extend(p for p in cp.read_text().strip().split(':') if not Path(p).exists())
     processes = subprocess.run(['/bin/ps', '-axo', 'command='], capture_output=True, text=True, timeout=5).stdout
-    desktop_active = any(exe in processes for exe in (
-        '/AARE Desktop.app/Contents/MacOS/AARE Desktop',
-        '/AARE Bridge Desktop.app/Contents/MacOS/AARE Bridge Desktop',
-        '/AARE Bridge Desktop.app/Contents/MacOS/AARE Desktop'))
+    desktop_active = any(exe in processes for exe in ('/AARE Desktop.app/Contents/MacOS/AARE Desktop', '/AARE Bridge Desktop.app/Contents/MacOS/AARE Bridge Desktop', '/AARE Bridge Desktop.app/Contents/MacOS/AARE Desktop'))
     return {'missing': missing, 'desktop_receiver_running': desktop_active,
             'recovery_pending': (HERE / 'runtime' / JOURNAL_NAME).exists(),
             'vehicle_access': False, 'radio_changes': False, 'ready_for_explicit_connect': not missing and not desktop_active and not (HERE / 'runtime' / JOURNAL_NAME).exists()}
@@ -66,6 +64,7 @@ def emulator_forward():
         raise RuntimeError('dedicated emulator not running')
     if adb('shell', 'getprop', 'sys.boot_completed').strip() != '1':
         raise RuntimeError('emulator not booted')
+    relay_identity.verify_installed(ADB, SERIAL)
     entries = [s.split() for s in adb('forward', '--list').splitlines() if s.strip()]
     existing = [e for e in entries if len(e) == 3 and e[1] == 'tcp:55277']
     if existing:
@@ -142,6 +141,7 @@ def owned_run(args, runtime):
     peers, listeners, workers = {}, {}, []
     jvm = native = control = None
     forward_created = False
+    identity_nonce = None
     # Short path avoids Darwin sockaddr_un's 104-byte path limit.
     private = Path(tempfile.mkdtemp(prefix='aare-live-', dir='/tmp')).resolve()
     native_report = out / 'native.json'
@@ -192,6 +192,10 @@ def owned_run(args, runtime):
                     raise TimeoutError('native IPC start deadline')
                 for key, _ in selector.select(0.2):
                     peers[key.data], _ = key.fileobj.accept(); selector.unregister(key.fileobj)
+        if not args.recover:
+            identity_nonce = nonce  # Own cleanup even if staging readback fails.
+            relay_identity.stage(ADB, SERIAL, native_report, nonce, args.seconds)
+            report['relay_identity_staged'] = True
         if args.recover:
             report['reason'] = 'recovery_requested'
         else:
@@ -257,6 +261,12 @@ def owned_run(args, runtime):
                 remove_owned_forward()
             except Exception:
                 report['forward_cleanup_incomplete'] = True
+        if identity_nonce:
+            try:
+                relay_identity.cleanup(ADB, SERIAL, identity_nonce)
+                report['relay_identity_cleaned'] = True
+            except Exception:
+                report['relay_identity_cleanup_incomplete'] = True
         report['private_sockets_removed'] = not private.exists()
         write_report(out / 'result.json', report)
         print(json.dumps({'report': str(out / 'result.json'), **report}), flush=True)

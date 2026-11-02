@@ -24,7 +24,7 @@ def main():
         r'\bgh[pousr]_[A-Za-z0-9]{20,}\b', r'\bgithub_pat_[A-Za-z0-9_]{20,}\b',
         r'\bAKIA[0-9A-Z]{16}\b', r'\bAIza[0-9A-Za-z_-]{30,}\b', r'\bsk-proj-[0-9A-Za-z_-]{20,}\b',
         r'/User[s]/[^/\s]+/', r'/Volume[s]/[^/\s]+/', r'\b0000[0-9A-F]{16}\b']
-    allowed_macs = {'AA:BB:CC:DD:EE:FF','AA:BB:CC:DD:EE:01','00:11:22:33:44:55'}
+    allowed_macs = {'AA:BB:CC:DD:EE:FF','AA:BB:CC:DD:EE:01','00:11:22:33:44:55', '00:00:00:00:00:00', '02:00:00:00:00:00', 'FF:FF:FF:FF:FF:FF', '01:11:22:33:44:55', '01:22:33:44:66:55', '01:22:33:44:55:66'}
     for name in files:
         p = ROOT / name
         if p.is_symlink(): issues.append(name + ': symlink not allowed'); continue

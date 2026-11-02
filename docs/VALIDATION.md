@@ -1,6 +1,7 @@
 # Validation record and reproducible checks
 
-Date: 2026-11-01. The following separates historical manual observations from tests rerun from this portable source export. Paths and machine/vehicle identifiers from the original private workspace are deliberately omitted.
+Original export date: 2026-11-01. See the [2026-11-02 update](SESSION_UPDATE_20261102.md)
+for later optional experiments and their separate validation limits. The following separates historical manual observations from tests rerun from this portable source export. Paths and machine/vehicle identifiers from the original private workspace are deliberately omitted.
 
 ## Portable export build validation
 
@@ -79,3 +80,14 @@ information response. Mac association and vehicle TCP/AAP were not verified;
 tool-side restoration was reported complete while head-unit cleanup remained
 unresolved. See [the sanitized experiment and diagnostic changes](WIRELESS_PROGRESS.md).
 No head-unit firmware or deployment artifacts are included here.
+
+## Portable checks rerun on 2026-11-02
+
+The updated wireless suite passed 28 Python tests plus 28 Swift assertions with
+simulated radios. The identity APK builder passed 17 Java helper checks, canonical
+DEX round-trip comparison, APK signature verification and a check that only
+classes4.dex content changed outside signing metadata. The checkout-local signer
+matched the existing encoder-patched APK. The optional privileged module container
+also built and its ZIP contents matched the input. These checks performed no ADB,
+AVD restart, real Bluetooth/Wi-Fi operation or vehicle deployment. Separate historical
+maintenance observations are recorded in the dated session update.

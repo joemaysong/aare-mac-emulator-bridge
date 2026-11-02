@@ -70,3 +70,10 @@ For handoff, report: phase reached, exact failing boundary, output paths, unreso
 ## Suggested user prompt for another agent
 
 > Read this repository's AGENTS.md and docs/AGENT_RUNBOOK.md. Rebuild the pinned Android+AARE Mac lab on this Apple Silicon Mac. Keep original AARE/prototux credit. Begin with doctor and dependency inventory, then rebuild and run simulated tests; use only AARE_Mac_API35 on emulator-5580. Verify local video, speaker audio and touch with me. Do not access or modify a vehicle, start wireless projection, add Google Play images, or publish logs/keys without a separate request. Report proven results separately from untested vehicle compatibility.
+
+## Later optional experiments
+
+Read [the 2026-11-02 checkpoint](SESSION_UPDATE_20261102.md) before running the
+wireless supervisor or changing APKs/privileged overlays. The default encoder-only
+APK supports local Desktop work; wireless identity preflight requires the separately
+built identity APK. Never interrupt another session or overwrite its retained signer.

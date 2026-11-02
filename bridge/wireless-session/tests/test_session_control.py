@@ -93,6 +93,7 @@ class SessionTests(unittest.TestCase):
         with self.assertRaises(ConnectionRefusedError):
             self.session.handle(READY)
         self.assertFalse(self.session.report['tcp_pair_connected'])
+        self.assertEqual(self.session.report['failure_stage'], 'tcp_pair')
 
     def test_ready_binary_round_trip_and_cancel(self):
         self.join()
@@ -123,13 +124,16 @@ class SessionTests(unittest.TestCase):
             with self.assertRaises(ConnectionRefusedError):
                 open_vehicle_stream('192.168.50.2', '192.168.50.1', 5288)
             self.assertEqual(connect.call_count, 1)
+            self.assertEqual(connect.side_effect.aare_connect_stage, 'vehicle_tcp')
 
     def test_phone_failure_closes_car_socket(self):
         a, b = socket.socketpair(); self.sockets.append(b)
-        with patch('stream_bridge.connect_socket', side_effect=[a, ConnectionRefusedError()]):
+        failure = ConnectionRefusedError()
+        with patch('stream_bridge.connect_socket', side_effect=[a, failure]):
             with self.assertRaises(ConnectionRefusedError):
                 open_vehicle_stream('192.168.50.2', '192.168.50.1', 5288)
         self.assertEqual(a.fileno(), -1)
+        self.assertEqual(failure.aare_connect_stage, 'emulator_tcp')
 
     def test_cancelled_connect_does_not_open_connection(self):
         self.stop.set()

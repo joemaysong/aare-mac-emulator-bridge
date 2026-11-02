@@ -83,7 +83,7 @@ class CoordinatorTest(unittest.TestCase):
                 return original_init(control, *args, **kwargs, opener=opener)
             args = argparse.Namespace(recover=False, seconds=10, device='00-11-22-33-44-55', cached_service_diagnostic=False)
             with patch.object(run_session, 'HERE', isolated), patch.object(run_session, 'preflight', return_value={'missing': [], 'desktop_receiver_running': False}), \
-                 patch.object(run_session, 'emulator_forward', return_value=False), patch.object(run_session.subprocess, 'Popen', side_effect=launch), \
+                 patch.object(run_session, 'emulator_forward', return_value=False), patch.object(run_session.relay_identity, 'stage', return_value=None), patch.object(run_session.relay_identity, 'cleanup', return_value=None), patch.object(run_session.subprocess, 'Popen', side_effect=launch), \
                  patch.object(SessionControl, '__init__', init):
                 code = run_session.owned_run(args, runtime)
             for worker in workers: worker.join(3)

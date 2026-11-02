@@ -108,8 +108,18 @@ class SessionControl:
                 raise ProtocolError('endpoint outside car network')
             if not re.fullmatch(r'[1-9][0-9]{0,4}', fields[2]) or not 1 <= int(fields[2]) <= 65535:
                 raise ProtocolError('port')
-            phone, car = self.opener(ip, str(host), int(fields[2]), stop=self.stop,
-                                     phone_port=self.phone_port, interface=interface)
+            self.report['vehicle_endpoint_port'] = int(fields[2])
+            self.report['vehicle_interface'] = interface
+            self.report['endpoint_is_gateway'] = str(host) == self.wifi[3]
+            try:
+                phone, car = self.opener(ip, str(host), int(fields[2]), stop=self.stop,
+                                         phone_port=self.phone_port, interface=interface)
+            except OSError as error:
+                stage = getattr(error, 'aare_connect_stage', 'tcp_pair')
+                self.report['failure_stage'] = stage if stage in ('vehicle_tcp', 'emulator_tcp') else 'tcp_pair'
+                self.report['failure_type'] = type(error).__name__
+                self.report['vehicle_tcp_connected'] = stage == 'emulator_tcp'
+                raise
             self.stream_started = True
             self.report['tcp_pair_connected'] = True
             relay = DuplexRelay(phone, car, stop=self.stop,

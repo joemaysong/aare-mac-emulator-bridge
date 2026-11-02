@@ -1,6 +1,8 @@
 # Wireless vehicle experiment: 2026-11-01
 
-This is a sanitized observation report, not a successful projection claim.
+Historical snapshot: see the [2026-11-02 checkpoint](SESSION_UPDATE_20261102.md)
+for subsequent work. This is a sanitized observation report, not a successful
+projection claim.
 AARE and its upstream authors remain credited in the repository README and NOTICE.
 
 ## Boundary reached

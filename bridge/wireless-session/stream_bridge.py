@@ -157,12 +157,16 @@ def open_vehicle_stream(local_ip, headunit_ip, headunit_port, *, stop=None,
     """
     stop = stop or threading.Event()
     car = phone = None
+    stage = "vehicle_tcp"
     try:
         car = connect_socket((headunit_ip, headunit_port), stop=stop,
                              source_ip=local_ip, interface=interface)
+        stage = "emulator_tcp"
         phone = connect_socket(('127.0.0.1', phone_port), stop=stop)
         return phone, car
-    except BaseException:
+    except BaseException as error:
+        if isinstance(error, OSError):
+            error.aare_connect_stage = stage
         for s in (phone, car):
             if s is not None:
                 s.close()

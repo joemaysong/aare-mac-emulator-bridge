@@ -26,13 +26,18 @@ SDKs/JDKs, AVD disk images, release APKs, third-party jars, private TLS/signing 
 | Taps and manual drag/scroll | Passed in the original lab; an automation tool sometimes omitted MOVE events |
 | Audio | Original lab received 48 kHz stereo PCM; the user confirmed the synthetic two-tone sound was audible |
 | Phone screen and Google Maps tiles | Passed in the original lab; not navigation or location validation |
-| YouTube bundled with the old image | Too old; service errors; playback did not pass |
+| YouTube | Old image failed; a separate optional privileged lab later played a Google-signed update. See [dated update](docs/SESSION_UPDATE_20261102.md); no Google APK is redistributed. |
 | New Mac supervisor, real JVM WPP, native IPC and fake radio | Local integration tests passed |
 | Rebuild and tests of this portable export | See the [validation record](docs/VALIDATION.md) |
-| Real-car WPP and association attempt | Wi-Fi information received; association/TCP not verified; tool reported restoration. See [latest progress](docs/WIRELESS_PROGRESS.md). |
+| Real-car WPP and association attempt | Earlier Wi-Fi information exchange is recorded in [historical progress](docs/WIRELESS_PROGRESS.md). Later video setup did not establish stable vehicle rendering/input. See [latest update](docs/SESSION_UPDATE_20261102.md). |
 | EV6 certificate/AAP acceptance and actual vehicle video/audio/touch | **Not verified** |
 
 Reference platform: Apple Silicon Mac, macOS 26.7, 16 GB RAM; Android API 35 `google_apis;arm64-v8a`, 2 GB guest RAM and 2 cores. Intel Macs, other Android images, other head units and long-session stability have not been validated. Original lab results are scoped manual observations, not a guarantee that every clone reproduces them automatically.
+
+The [2026-11-02 update](docs/SESSION_UPDATE_20261102.md) adds optional relay identity,
+TCP-stage diagnostics, privileged-audio reproduction boundaries and rollback notes.
+The identity-enabled wireless preflight requires its separately built APK;
+the default encoder-only setup below remains the local Desktop route.
 
 ## Start from a fresh checkout
 
