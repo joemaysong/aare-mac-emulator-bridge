@@ -17,6 +17,14 @@ final class Probe: NSObject {
     var inquiry: IOBluetoothDeviceInquiry?
     var device: IOBluetoothDevice?
     var channel: IOBluetoothRFCOMMChannel?
+    var rfcommOpened = false
+    // This is a local transport-start bound, not an AA protocol timeout.
+    func boundRfcommOpen() {
+        DispatchQueue.main.asyncAfter(deadline: .now() + 25) { [weak self] in
+            guard let self = self, !self.finished, !self.stopping, !self.rfcommOpened else { return }
+            self.finish("rfcomm_open_timeout")
+        }
+    }
     var events: [[String: Any]] = []
     var finished = false
     var incoming = Data()
@@ -59,6 +67,7 @@ final class Probe: NSObject {
         event("inventory_started")
         event("doctor", ["os": ProcessInfo.processInfo.operatingSystemVersionString,
             "bluetooth_power_raw": IOBluetoothHostController.default().map { Int($0.powerState.rawValue) } ?? -1,
+            "local_bluetooth_address": IOBluetoothHostController.default()?.addressAsString() ?? "",
             "wifi_interfaces": CWWiFiClient.shared().interfaces()?.compactMap { $0.interfaceName } ?? []])
         let paired = IOBluetoothDevice.pairedDevices() as? [IOBluetoothDevice] ?? []
         event("paired_devices", ["count": paired.count])
@@ -88,6 +97,7 @@ final class Probe: NSObject {
                 let opened = selected.openRFCOMMChannelAsync(&channel, withChannelID: cached, delegate: self)
                 event("rfcomm_requested", ["status": opened])
                 if opened != kIOReturnSuccess { finish("rfcomm_request_failed") }
+                else { boundRfcommOpen() }
                 return
             }
         }
@@ -116,11 +126,13 @@ final class Probe: NSObject {
         let opened = device.openRFCOMMChannelAsync(&channel, withChannelID: id, delegate: self)
         event("rfcomm_requested", ["status": opened])
         if opened != kIOReturnSuccess { finish("rfcomm_request_failed") }
+        else { boundRfcommOpen() }
     }
     @objc func rfcommChannelOpenComplete(_ channel: IOBluetoothRFCOMMChannel!, status: IOReturn) {
         guard !finished && !stopping else { return }
         event("rfcomm_open", ["status": status])
         if status != kIOReturnSuccess { finish("rfcomm_failed"); return }
+        rfcommOpened = true
         bridge?.receive({ [weak self] data in
             // Use a bounded synchronous hop so native writes stay on the run loop.
             var result = false
@@ -165,10 +177,7 @@ guard let directory = argument("--bridge-directory"), let journalPath = argument
       journalPath.hasPrefix("/"), argument("--nonce")?.count == 32 else { exit(2) }
 let journal = URL(fileURLWithPath: journalPath)
 let parent = journal.deletingLastPathComponent()
-guard let attrs = try? FileManager.default.attributesOfItem(atPath: parent.path),
-      (attrs[.ownerAccountID] as? NSNumber)?.uint32Value == getuid(),
-      (attrs[.posixPermissions] as? NSNumber)?.intValue == 0o700,
-      canonicalPrivatePath(parent.path) else { exit(2) }
+guard ownedPrivateDirectory(parent.path) else { exit(2) }
 let app = NSApplication.shared
 app.setActivationPolicy(.accessory)
 let probe = Probe(output: output, openChannel: true)
@@ -192,6 +201,10 @@ for number in [SIGINT, SIGTERM, SIGHUP] {
 }
 DispatchQueue.main.async {
     probe.event("native_session_started")
+    let wifiState = probe.control?.lease.radio.snapshot()
+    probe.event("wifi_visibility", ["location_authorization": location.authorizationStatus.rawValue,
+        "powered": wifiState?.powered ?? false, "associated": wifiState?.associated ?? false,
+        "ssid_visible": wifiState?.ssid != nil, "bssid_visible": wifiState?.bssid != nil])
     probe.control?.run(recovery: recovery)
     if !recovery { probe.start("probe", address: argument("--device")) }
 }

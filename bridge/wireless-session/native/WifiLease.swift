@@ -10,6 +10,17 @@ func canonicalPrivatePath(_ path: String) -> Bool {
     return path == resolved || ((path.hasPrefix("/tmp/") || path.hasPrefix("/var/")) && resolved == "/private" + path)
 }
 
+// POSIX metadata is sufficient for this guard; Foundation also reads unrelated
+// extended attributes, which can block before the session watchdog starts.
+func ownedPrivateDirectory(_ path: String) -> Bool {
+    var info = stat()
+    guard lstat(path, &info) == 0,
+          info.st_uid == getuid(),
+          (info.st_mode & S_IFMT) == S_IFDIR,
+          (info.st_mode & 0o7777) == 0o700 else { return false }
+    return canonicalPrivatePath(path)
+}
+
 struct WifiSnapshot: Equatable {
     var powered: Bool
     var ssid: String?

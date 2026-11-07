@@ -42,10 +42,14 @@ public final class EmulatorWirelessSession {
             AapLog log = new AapLog() {
                 public void d(String s) {
                     if (s.startsWith("wireless: <- ") || s.startsWith("wireless: -> ")) System.out.println(s);
+                    if (s.startsWith("wireless: -> WifiVersionResponse")) System.out.println("AA_BUTTON_WINDOW_READY max_wait_seconds=180");
                 }
                 public void i(String s) { }
                 public void w(String s, Throwable e) { }
-                public void e(String s, Throwable e) { }
+                public void e(String s, Throwable e) {
+                    if (s.matches("wireless: timed out after [0-9]+ ms waiting for a WifiStartRequest \\(is a projection already running on the head unit\\?\\)"))
+                        System.out.println("WPP_IDLE_INVITATION_TIMEOUT");
+                }
             };
             WirelessBootstrap bootstrap = new WirelessBootstrap(
                 Channels.newInputStream(rx), Channels.newOutputStream(tx),
@@ -68,7 +72,7 @@ public final class EmulatorWirelessSession {
                             System.out.println("WPP_READY_STREAM_CONNECTED");
                         } catch (IOException error) { throw new IllegalStateException("stream unavailable"); }
                     }
-                }, log, new WirelessBootstrap.Options(60_000, 5_000, 2_000, 100, true, args[1]));
+                }, log, new WirelessBootstrap.Options(60_000, 5_000, 2_000, 100, true, args[1], 180_000));
             Thread shutdown = new Thread(() -> { bootstrap.close(); try { control.close(); } catch (IOException ignored) { } });
             Runtime.getRuntime().addShutdownHook(shutdown);
             try {

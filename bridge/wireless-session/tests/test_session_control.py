@@ -1,4 +1,3 @@
-import os
 import base64
 import json
 from pathlib import Path
@@ -160,7 +159,7 @@ def frame(number, data):
 class RealJvmWppTest(unittest.TestCase):
     def test_real_wpp_to_coordinator_to_opaque_stream(self):
         root = HERE.parent
-        java = Path(os.environ.get('JAVA_HOME', str(root / 'runtime/jdk'))) / 'bin/java'
+        java = root / 'runtime/jdk-17.0.21+9/Contents/Home/bin/java'
         cp = str(HERE / 'build/classes') + ':' + (root / 'core/aap/build/mac-classpath.txt').read_text().strip()
         stop = threading.Event(); sockets = []; threads = []; errors = []
         with tempfile.TemporaryDirectory(prefix='aare-wpp-test-', dir='/tmp') as temp:

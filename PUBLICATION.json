@@ -1,6 +1,6 @@
 {
   "schema": "AARE_MAC_PUBLICATION_1",
-  "date": "2026-11-02",
+  "date": "2026-11-07",
   "timezone": "Asia/Taipei",
   "public_repository": "https://github.com/joemaysong/aare-mac-emulator-bridge",
   "upstream": {
@@ -17,10 +17,12 @@
     "swift_wifi_lease_assertions": 28,
     "portable_core_apk_desktop_probe_and_native_builds": "PASS",
     "new_checkout_gui_acceptance": "NOT_RUN",
-    "real_vehicle_projection": "NOT_VERIFIED",
+    "real_vehicle_projection": "OBSERVED_V17_INTEGRATION_SEE_docs/V17-VALIDATION.md",
     "relay_identity_java_checks": 17,
     "privileged_module_offline_build": "passed; not installed",
-    "portable_identity_apk": "built; signature/canonical roundtrip/content scope verified; not installed"
+    "portable_identity_apk": "built; signature/canonical roundtrip/content scope verified; not installed",
+    "v17_standby_invitation_tests": 23,
+    "v17_public_full_integration": "NOT_PASSED_MISSING_LOCAL_BUILD_PREREQUISITES"
   },
   "excluded": [
     "credentials and API tokens",

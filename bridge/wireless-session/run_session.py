@@ -19,10 +19,11 @@ import time
 
 from session_control import SessionControl
 import relay_identity
+from invitation_evidence import idle_wait_expired
 
 HERE = Path(__file__).resolve().parent
 ROOT = HERE.parent
-ADB = Path(os.environ.get('ANDROID_SDK_ROOT', str(Path.home() / 'Library/Android/sdk'))) / 'platform-tools/adb'
+ADB = Path(os.environ.get('ADB', str(Path.home() / 'Library/Android/sdk/platform-tools/adb')))
 SERIAL = 'emulator-5580'
 APP = HERE / 'build/AARE Wireless Session.app'
 JOURNAL_NAME = 'wifi-recovery.json'
@@ -43,7 +44,7 @@ def write_report(path, value):
 
 
 def preflight():
-    java = Path(os.environ.get('JAVA_HOME', str(ROOT / 'runtime/jdk'))) / 'bin/java'
+    java = ROOT / 'runtime/jdk-17.0.21+9/Contents/Home/bin/java'
     cp = ROOT / 'core/aap/build/mac-classpath.txt'
     required = [java, cp, APP / 'Contents/MacOS/aare-wireless-session',
                 HERE / 'build/classes/org/ev6/aare/mac/EmulatorWirelessSession.class', ADB]
@@ -51,7 +52,8 @@ def preflight():
     if cp.is_file():
         missing.extend(p for p in cp.read_text().strip().split(':') if not Path(p).exists())
     processes = subprocess.run(['/bin/ps', '-axo', 'command='], capture_output=True, text=True, timeout=5).stdout
-    desktop_active = any(exe in processes for exe in ('/AARE Desktop.app/Contents/MacOS/AARE Desktop', '/AARE Bridge Desktop.app/Contents/MacOS/AARE Bridge Desktop', '/AARE Bridge Desktop.app/Contents/MacOS/AARE Desktop'))
+    desktop_active = any(str(ROOT / ('emulator-lab/apps/' + name + '/Contents/MacOS/AARE Desktop')) in processes
+                         for name in ('AARE Desktop.app', 'AARE Bridge Desktop.app'))
     return {'missing': missing, 'desktop_receiver_running': desktop_active,
             'recovery_pending': (HERE / 'runtime' / JOURNAL_NAME).exists(),
             'vehicle_access': False, 'radio_changes': False, 'ready_for_explicit_connect': not missing and not desktop_active and not (HERE / 'runtime' / JOURNAL_NAME).exists()}
@@ -65,6 +67,7 @@ def emulator_forward():
     if adb('shell', 'getprop', 'sys.boot_completed').strip() != '1':
         raise RuntimeError('emulator not booted')
     relay_identity.verify_installed(ADB, SERIAL)
+    relay_identity.check_private_access(ADB, SERIAL)
     entries = [s.split() for s in adb('forward', '--list').splitlines() if s.strip()]
     existing = [e for e in entries if len(e) == 3 and e[1] == 'tcp:55277']
     if existing:
@@ -180,7 +183,7 @@ def owned_run(args, runtime):
                 raise RuntimeError('identity schema')
             cp = str(HERE / 'build/classes') + ':' + (ROOT / 'core/aap/build/mac-classpath.txt').read_text().strip()
             with (out / 'wpp.log').open('w') as log:
-                jvm = subprocess.Popen([str(Path(os.environ.get('JAVA_HOME', str(ROOT / 'runtime/jdk'))) / 'bin/java'),
+                jvm = subprocess.Popen([str(ROOT / 'runtime/jdk-17.0.21+9/Contents/Home/bin/java'),
                     '-Xmx128m', '-cp', cp, 'org.ev6.aare.mac.EmulatorWirelessSession', str(private), serial],
                     stdout=log, stderr=subprocess.STDOUT)
         with selectors.DefaultSelector() as selector:
@@ -268,6 +271,15 @@ def owned_run(args, runtime):
             except Exception:
                 report['relay_identity_cleanup_incomplete'] = True
         report['private_sockets_removed'] = not private.exists()
+        # Fixed protocol marker only; do not export exception text or credentials.
+        try:
+            with (out / 'wpp.log').open() as wpp:
+                protocol_log = wpp.read(262144)
+            native_evidence = json.loads(native_report.read_text())
+            report['invitation_wait_expired'] = idle_wait_expired(protocol_log, native_evidence, report)
+        except (OSError, ValueError, TypeError, AttributeError):
+            report['invitation_wait_expired'] = False
+
         write_report(out / 'result.json', report)
         print(json.dumps({'report': str(out / 'result.json'), **report}), flush=True)
     return 0 if report.get('wifi_restored') and report.get('native_complete') and not report.get('error_type') else 1

@@ -19,6 +19,16 @@ let safe = NativeControl.safeFailure(NSError(domain: secret, code: -3900, userIn
 precondition(safe.0 == "system_wifi_error" && safe.1 == -3900)
 precondition(NativeControl.safeFailure(CoreWifiRadio.Failure.missingNetwork).0 == "network_not_found")
 precondition(NativeControl.safeFailure(WifiLease.Failure.address).0 == "dhcp_or_identity")
+let guardDirectory = "/private/tmp/aare-dir-guard-" + UUID().uuidString
+precondition(mkdir(guardDirectory, 0o700) == 0)
+precondition(ownedPrivateDirectory(guardDirectory))
+precondition(chmod(guardDirectory, 0o755) == 0)
+precondition(!ownedPrivateDirectory(guardDirectory))
+precondition(chmod(guardDirectory, 0o700) == 0)
+precondition(symlink(guardDirectory, guardDirectory + "-link") == 0)
+precondition(!ownedPrivateDirectory(guardDirectory + "-link"))
+precondition(unlink(guardDirectory + "-link") == 0)
+precondition(rmdir(guardDirectory) == 0)
 let args = CommandLine.arguments
 guard args.count == 5 || args.count == 6 else { exit(2) }
 let radio = TestRadio()
@@ -37,3 +47,4 @@ control.ended = { mutated, restored in
 }
 control.run(recovery: args[4] == "recover")
 dispatchMain()
+

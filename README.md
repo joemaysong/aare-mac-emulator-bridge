@@ -4,7 +4,7 @@ Run an **Android 15 emulator + AARE** on an Apple Silicon Mac, validate local vi
 
 **AARE was created by [prototux](https://github.com/prototux); the original project is [prototux/AARE](https://github.com/prototux/AARE).** AARE provides the Android Auto protocol implementation, Android app and desktop receiver. This repository adds Mac reproduction scripts, an emulator encoder compatibility patch and transport integration. Upstream uses GPL-3.0; see [NOTICE.md](NOTICE.md) and [LICENSE](LICENSE) for attribution, licensing and modification boundaries.
 
-> **The Mac local environment can be rebuilt and tested; actual Mac-to-EV6 wireless projection has not been verified successfully.** Passing simulated tests does not establish vehicle acceptance of certificates, phone roles or AAP. This repository contains no vehicle flashing, vehicle APK installation, forced AP startup, vehicle-control APIs or head-unit patches.
+> **Actual Mac-to-EV6 wireless AA projection has now been observed in the V17 integration series; see [validation and limits](docs/V17-VALIDATION.md).** Passing simulated tests does not establish vehicle acceptance of certificates, phone roles or AAP. This repository contains no vehicle flashing, vehicle APK installation, forced AP startup, vehicle-control APIs or head-unit patches.
 
 ## What is included
 

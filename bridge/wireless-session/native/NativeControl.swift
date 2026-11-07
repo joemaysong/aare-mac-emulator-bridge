@@ -31,10 +31,7 @@ final class NativeControl {
         return ("system_wifi_error", (error as NSError).code)
     }
     init(directory: String, journal: URL, radio: WifiRadio? = nil) throws {
-        let attrs = try FileManager.default.attributesOfItem(atPath: directory)
-        guard (attrs[.ownerAccountID] as? NSNumber)?.uint32Value == getuid(),
-              (attrs[.posixPermissions] as? NSNumber)?.intValue == 0o700,
-              canonicalPrivatePath(directory) else { throw WifiLease.Failure.journal }
+        guard ownedPrivateDirectory(directory) else { throw WifiLease.Failure.journal }
         let path = directory + "/native-control.sock"
         var address = sockaddr_un(); address.sun_family = sa_family_t(AF_UNIX)
         guard path.utf8.count < MemoryLayout.size(ofValue: address.sun_path) else { throw WifiLease.Failure.journal }
